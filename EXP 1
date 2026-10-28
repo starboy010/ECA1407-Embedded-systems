@@ -1,0 +1,104 @@
+/ NAME : THIRUKARTHIKEYAN S
+// REG NO: 192511021
+// DEPT: CSE
+// COURSE: ECA 1407 EMBEDDED SYSTEMS
+const int gasPin = A0;
+const int pirPin = 2;
+const int trigPin = 9;
+const int echoPin = 10;
+const int buzzerPin = 6;
+const int ledPin = 7;
+
+const int gasThreshold = 500;
+const float distanceThreshold = 20.0;
+
+float getDistance() {
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  long duration = pulseIn(echoPin, HIGH, 30000);
+
+  if (duration == 0) {
+    return -1.0;
+  }
+
+  return duration * 0.0343 / 2.0;
+}
+
+void setup() {
+  pinMode(gasPin, INPUT);
+  pinMode(pirPin, INPUT);
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  pinMode(buzzerPin, OUTPUT);
+  pinMode(ledPin, OUTPUT);
+
+  digitalWrite(trigPin, LOW);
+  digitalWrite(ledPin, LOW);
+  noTone(buzzerPin);
+
+  Serial.begin(9600);
+}
+
+void loop() {
+  int gasLevel = analogRead(gasPin);
+  int motion = digitalRead(pirPin);
+  float distance = getDistance();
+
+  bool gasAlert = gasLevel > gasThreshold;
+  bool motionAlert = motion == HIGH;
+  bool distanceAlert =
+      distance >= 0 && distance < distanceThreshold;
+
+  // Buzzer sounds for gas, motion, or nearby objects
+  if (gasAlert || motionAlert || distanceAlert) {
+    tone(buzzerPin, 2000);
+  } else {
+    noTone(buzzerPin);
+  }
+
+  // LED turns on for motion or nearby objects
+  digitalWrite(ledPin,
+               (motionAlert || distanceAlert) ? HIGH : LOW);
+
+  // Display sensor readings
+  Serial.print("Gas Level: ");
+  Serial.println(gasLevel);
+
+  Serial.print("Motion: ");
+  Serial.println(motionAlert ? "DETECTED" : "NOT DETECTED");
+
+  Serial.print("Distance: ");
+
+  if (distance < 0) {
+    Serial.println("No Echo");
+  } else {
+    Serial.print(distance, 1);
+    Serial.println(" cm");
+  }
+
+  // Display alert status
+  if (gasAlert) {
+    Serial.println("GAS ALERT!");
+  }
+
+  if (motionAlert) {
+    Serial.println("MOTION DETECTED!");
+  }
+
+  if (distanceAlert) {
+    Serial.println("OBJECT DETECTED!");
+  }
+
+  if (!gasAlert && !motionAlert && !distanceAlert) {
+    Serial.println("SYSTEM SAFE");
+  }
+
+  Serial.println("--------------------");
+
+  delay(1000);
+}
